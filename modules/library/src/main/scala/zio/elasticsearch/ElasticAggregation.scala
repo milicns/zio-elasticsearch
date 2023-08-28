@@ -17,7 +17,9 @@
 package zio.elasticsearch
 
 import zio.Chunk
+import zio.elasticsearch.ElasticPrimitive.ElasticPrimitive
 import zio.elasticsearch.aggregation._
+import zio.elasticsearch.query.sort.SortOrder
 import zio.elasticsearch.script.Script
 
 object ElasticAggregation {
@@ -294,4 +296,33 @@ object ElasticAggregation {
    */
   final def termsAggregation(name: String, field: String): TermsAggregation =
     Terms(name = name, field = field, order = Chunk.empty, subAggregations = Chunk.empty, size = None)
+
+  /**
+   * Constructs a type-safe instance of [[zio.elasticsearch.aggregation.TopMetricsAggregation]] using the specified
+   * parameters.
+   *
+   * @param name
+   * the name of the aggregation
+   * @param field
+   * the type-safe field for which the aggregation will be executed
+   * @return
+   * an instance of [[zio.elasticsearch.aggregation.TopMetricsAggregation]] that represents terms aggregation to be
+   * performed.
+   */
+  final def topMetricsAggregation[A: Numeric, S](name: String, sortField: Field[_, A], sortType: SortOrder, metricsField: Field[S, _], metricsFields: Field[S,_]*): TopMetricsAggregation =
+    TopMetrics(name = name, sortField = sortField.toString, sortType = sortType, metricsFields = Chunk.fromIterable((metricsField +: metricsFields).map(_.toString)), size = None)
+
+  /**
+   * Constructs an instance of [[zio.elasticsearch.aggregation.TopMetricsAggregation]] using the specified parameters.
+   *
+   * @param name
+   * aggregation name
+   * @param field
+   * the field for which terms aggregation will be executed
+   * @return
+   * an instance of [[zio.elasticsearch.aggregation.TopMetricsAggregation]] that represents terms aggregation to be
+   * performed.
+   */
+  final def topMetricsAggregation(name: String, sortField: String, sortType: SortOrder, metricsField: String, metricsFields: String*): TopMetricsAggregation =
+    TopMetrics(name = name, sortField = sortField, sortType = sortType, metricsFields = Chunk.fromIterable(metricsField +: metricsFields), size = None)
 }

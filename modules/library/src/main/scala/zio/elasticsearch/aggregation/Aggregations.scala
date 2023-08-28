@@ -20,7 +20,7 @@ import zio.Chunk
 import zio.elasticsearch.ElasticAggregation.multipleAggregations
 import zio.elasticsearch.ElasticPrimitive.ElasticPrimitiveOps
 import zio.elasticsearch.aggregation.options._
-import zio.elasticsearch.query.sort.Sort
+import zio.elasticsearch.query.sort.{Sort, SortOrder}
 import zio.elasticsearch.script.Script
 import zio.json.ast.Json
 import zio.json.ast.Json.{Arr, Obj}
@@ -317,5 +317,24 @@ private[elasticsearch] final case class Terms(
         Obj()
 
     Obj(name -> (Obj("terms" -> (Obj("field" -> self.field.toJson) merge orderJson merge sizeJson)) merge subAggsJson))
+  }
+}
+
+sealed trait TopMetricsAggregation extends SingleElasticAggregation with HasSize[TopMetricsAggregation] with WithAgg
+
+private[elasticsearch] final case class TopMetrics(name: String, sortField: String, sortType: SortOrder, metricsFields: Chunk[String], size: Option[Int]) extends
+  TopMetricsAggregation {
+  self =>
+
+  def size(value: Int): TopMetricsAggregation =
+    self.copy(size = Some(value))
+
+  def withAgg(agg: SingleElasticAggregation): MultipleAggregations =
+    multipleAggregations.aggregations(self, agg)
+
+  private[elasticsearch] def toJson: Json = {
+    val metricsJson = if (metricsFields.size == 1) "metrics" -> Obj("field" -> metricsFields.head.toJson) else "metrics" -> Arr(metricsFields.map(f => Obj("field" -> f.toJson)))
+
+    Obj(name -> Obj("top_metrics" -> (Obj(metricsJson) merge Obj("sort" -> Obj(sortField -> sortType.toString.toJson)) merge size.fold(Obj())(s => Obj("size" -> s.toJson)))))
   }
 }
