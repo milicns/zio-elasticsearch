@@ -17,6 +17,7 @@
 package zio.elasticsearch.result
 
 import zio.Chunk
+import zio.json.{DeriveJsonDecoder, JsonDecoder}
 
 import scala.util.{Failure, Success, Try}
 
@@ -59,4 +60,11 @@ final case class TermsAggregationBucketResult private[elasticsearch] (
       case None =>
         Right(None)
     }
+}
+
+final case class TopMetricsAggregationResult private[elasticsearch] (top: Chunk[Top]) extends AggregationResult
+
+private[elasticsearch] final case class Top(sort: Int, metrics: Map[String, _])
+private[elasticsearch] object Top {
+  implicit val decoder: JsonDecoder[Top] = DeriveJsonDecoder.gen[Top]
 }

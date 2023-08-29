@@ -55,6 +55,8 @@ object AggregationResponse {
             )
           )
         )
+      case TopMetricsAggregationResponse(top) =>
+        TopMetricsAggregationResult(top)
     }
 }
 
@@ -117,6 +119,12 @@ private[elasticsearch] object TermsAggregationResponse {
   implicit val decoder: JsonDecoder[TermsAggregationResponse] = DeriveJsonDecoder.gen[TermsAggregationResponse]
 }
 
+private[elasticsearch] final case class TopMetricsAggregationResponse(top: Chunk[Top]) extends AggregationResponse
+
+private[elasticsearch] object TopMetricsAggregationResponse {
+  implicit val decoder: JsonDecoder[TopMetricsAggregationResponse] = DeriveJsonDecoder.gen[TopMetricsAggregationResponse]
+}
+
 private[elasticsearch] sealed trait AggregationBucket
 
 private[elasticsearch] final case class TermsAggregationBucket(
@@ -162,6 +170,8 @@ private[elasticsearch] object TermsAggregationBucket {
                     .map(_.unsafeAs[TermsAggregationBucket](TermsAggregationBucket.decoder))
                 )
               )
+            case str if str.contains("top_metrics#") =>
+              Some(field -> TopMetricsAggregationResponse(top = objFields("top").unsafeAs[Chunk[Json]].map(_.unsafeAs[Top])))
           }
       }
     }.toMap
@@ -187,6 +197,8 @@ private[elasticsearch] object TermsAggregationBucket {
             (field.split("#")(1), data.asInstanceOf[SumAggregationResponse])
           case str if str.contains("terms#") =>
             (field.split("#")(1), data.asInstanceOf[TermsAggregationResponse])
+          case str if str.contains("top_metrics#") =>
+            (field.split("#")(1), data.asInstanceOf[TopMetricsAggregationResponse])
         }
     }
 

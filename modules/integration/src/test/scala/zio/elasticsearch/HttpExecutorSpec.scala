@@ -248,6 +248,30 @@ object HttpExecutorSpec extends IntegrationSpec {
             Executor.execute(ElasticRequest.createIndex(firstSearchIndex)),
             Executor.execute(ElasticRequest.deleteIndex(firstSearchIndex)).orDie
           ),
+          test("aggregate using top metrics aggregation") {
+            checkOnce(genDocumentId, genTestDocument, genDocumentId, genTestDocument) {
+              (firstDocumentId, firstDocument, secondDocumentId, secondDocument) =>
+                for {
+                  _ <- Executor.execute(ElasticRequest.deleteByQuery(firstSearchIndex, matchAll))
+                  _ <- Executor.execute(
+                    ElasticRequest.upsert[TestDocument](firstSearchIndex, firstDocumentId, firstDocument)
+                  )
+                  _ <- Executor.execute(
+                    ElasticRequest
+                      .upsert[TestDocument](firstSearchIndex, secondDocumentId, secondDocument)
+                      .refreshTrue
+                  )
+                  aggregation =
+                    topMetricsAggregation("aggregationTop", TestDocument.intField, Desc, TestDocument.booleanField, TestDocument.stringField)
+                  aggsRes <- Executor
+                    .execute(ElasticRequest.aggregate(index = firstSearchIndex, aggregation = aggregation))
+                    .asTopMetricsAggregation("aggregationTop")
+                } yield assert(aggsRes)(isNonEmpty)
+            }
+          } @@ around(
+            Executor.execute(ElasticRequest.createIndex(firstSearchIndex)),
+            Executor.execute(ElasticRequest.deleteIndex(firstSearchIndex)).orDie
+          ),
           test("aggregate using missing aggregations") {
             checkOnce(genDocumentId, genTestDocument, genDocumentId, genTestDocument) {
               (firstDocumentId, firstDocument, secondDocumentId, secondDocument) =>

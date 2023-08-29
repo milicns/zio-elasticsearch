@@ -309,7 +309,8 @@ object ElasticAggregation {
    * an instance of [[zio.elasticsearch.aggregation.TopMetricsAggregation]] that represents terms aggregation to be
    * performed.
    */
-  final def topMetricsAggregation[A: Numeric, S](name: String, sortField: Field[_, A], sortType: SortOrder, metricsField: Field[S, _], metricsFields: Field[S,_]*): TopMetricsAggregation =
+
+  final def topMetricsAggregation[A: Numeric](name: String, sortField: Field[_, A], sortType: SortOrder, metricsField: Field[_, _], metricsFields: Field[_, _]*): TopMetricsAggregation =
     TopMetrics(name = name, sortField = sortField.toString, sortType = sortType, metricsFields = Chunk.fromIterable((metricsField +: metricsFields).map(_.toString)), size = None)
 
   /**

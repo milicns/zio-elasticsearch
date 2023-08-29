@@ -155,6 +155,9 @@ package object elasticsearch extends IndexNameNewtype with RoutingNewtype {
      */
     def asTermsAggregation(name: String): RIO[R, Option[TermsAggregationResult]] =
       aggregationAs[TermsAggregationResult](name)
+
+    def asTopMetricsAggregation(name: String): RIO[R, Option[TopMetricsAggregationResult]] =
+      aggregationAs[TopMetricsAggregationResult](name)
   }
 
   final implicit class ZIODocumentOps[R, F[_]](zio: RIO[R, DocumentResult[F]]) {

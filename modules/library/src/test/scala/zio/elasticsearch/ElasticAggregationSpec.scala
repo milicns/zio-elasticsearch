@@ -1050,7 +1050,7 @@ object ElasticAggregationSpec extends ZIOSpecDefault {
           val aggregation = topMetricsAggregation("aggregation", "intField", Desc, "stringField")
           val aggregationTs = topMetricsAggregation("aggregation", TestDocument.intField, Desc, TestDocument.stringField)
           val aggregationWithMultipleMetrics = topMetricsAggregation("aggregation", TestDocument.intField, Desc, TestDocument.booleanField, TestDocument.intField)
-
+          val aggregationWithSize = topMetricsAggregation("aggregation", TestDocument.intField, Desc, TestDocument.stringField).size(3)
           val expected =
             """
               |{
@@ -1074,9 +1074,36 @@ object ElasticAggregationSpec extends ZIOSpecDefault {
               |  }
               |}
               |""".stripMargin
+          val expectedWithMultipleMetrics =
+            """
+              |{
+              |  "aggregation": {
+              |    "top_metrics": {
+              |        "metrics": [{"field": "booleanField"},
+              |                    {"field": "intField"}],
+              |        "sort": {"intField": "desc"}
+              |    }
+              |  }
+              |}
+              |""".stripMargin
+
+          val expectedWithSize =
+            """
+              |{
+              |  "aggregation": {
+              |    "top_metrics": {
+              |        "metrics": {"field": "stringField"},
+              |        "sort": {"intField": "desc"},
+              |        "size": 3
+              |    }
+              |  }
+              |}
+              |""".stripMargin
 
           assert(aggregation.toJson)(equalTo(expected.toJson)) &&
-            assert(aggregationTs.toJson)(equalTo(expectedTs.toJson))
+            assert(aggregationTs.toJson)(equalTo(expectedTs.toJson)) &&
+            assert(aggregationWithMultipleMetrics.toJson)(equalTo(expectedWithMultipleMetrics.toJson)) &&
+            assert(aggregationWithSize.toJson)(equalTo(expectedWithSize.toJson))
         }
       )
     )
